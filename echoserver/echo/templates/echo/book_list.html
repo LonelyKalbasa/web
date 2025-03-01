@@ -1,0 +1,20 @@
+{% for book in books %}
+    <p>{{ book.title }} - {{ book.author }} - {{ book.price }}$</p>
+    <a href="{% url 'book_update' book.pk %}">Изменить</a>
+    <a href="{% url 'book_delete' book.pk %}">Удалить</a>
+{% endfor %}
+
+<a href="{% url 'book_create' %}"><br>Добавить новую книгу</a>
+
+<div>
+    {% if books.has_previous %}
+        <a href="?page=1">Первая</a>
+        <a href="?page={{ books.previous_page_number }}">Предыдущая</a>
+    {% endif %}
+
+    {% if books.has_next %}
+        <a href="?page={{ books.next_page_number }}">Следующая</a>
+        <a href="?page={{ books.paginator.num_pages }}">Последняя</a>
+    {% endif %}
+    <br>Страница {{ books.number }} из {{ books.paginator.num_pages }}
+</div>
