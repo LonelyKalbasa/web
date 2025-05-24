@@ -1,0 +1,13 @@
+{% extends 'bookstore/base.html' %}
+{% load crispy_forms_tags %}  <!-- Эта строка должна быть сразу после extends -->
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Личный кабинет</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form|crispy }}  <!-- Используем crispy фильтр -->
+        <button type="submit" class="btn btn-primary mt-3">Сохранить изменения</button>
+    </form>
+</div>
+{% endblock %}

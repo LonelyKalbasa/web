@@ -1,0 +1,57 @@
+{% extends 'bookstore/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Ваша корзина</h2>
+    
+    {% if cart.items.all %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Книга</th>
+                        <th>Цена</th>
+                        <th>Количество</th>
+                        <th>Итого</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in cart.items.all %}
+                    <tr>
+                        <td>{{ item.book.title }}</td>
+                        <td>{{ item.book.price }} руб.</td>
+                        <td>
+                            <form method="post" action="{% url 'update_cart_item' item.id %}">
+                                {% csrf_token %}
+                                <input type="number" name="quantity" value="{{ item.quantity }}" min="1" class="form-control" style="width: 70px;">
+                            </form>
+                        </td>
+                        <td>{{ item.get_total_price }} руб.</td>
+                        <td>
+                            <a href="{% url 'remove_from_cart' item.id %}" class="btn btn-danger btn-sm">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <div class="text-end">
+                <h4>Общая сумма: {{ total }} руб.</h4>
+                <a href="{% url 'checkout' %}" class="btn btn-success btn-lg mt-3">
+                    Оформить заказ
+                </a>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            Ваша корзина пуста
+        </div>
+        <a href="{% url 'book_list' %}" class="btn btn-primary">
+            Вернуться к покупкам
+        </a>
+    {% endif %}
+</div>
+{% endblock %}

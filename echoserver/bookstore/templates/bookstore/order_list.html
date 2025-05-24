@@ -1,0 +1,56 @@
+{% extends 'bookstore/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">Мои заказы</h1>
+    
+    {% if orders %}
+        <div class="list-group">
+            {% for order in orders %}
+                <div class="list-group-item mb-3">
+                    <div class="d-flex justify-content-between">
+                        <h5>Заказ #{{ order.id }}</h5>
+                        <span class="badge bg-{% if order.status == 'C' %}success{% else %}warning{% endif %}">
+                            {{ order.get_status_display }}
+                        </span>
+                    </div>
+                    <p class="mb-1"><strong>Дата:</strong> {{ order.created_at|date:"d.m.Y H:i" }}</p>
+                    <p class="mb-1"><strong>Сумма:</strong> {{ order.total_price }} руб.</p>
+                    
+                    <div class="mt-2">
+                        <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#orderDetails{{ order.id }}">
+                            Показать детали
+                        </button>
+                        <a href="{% url 'order_detail' order.id %}" class="btn btn-sm btn-outline-secondary">
+                            Подробнее
+                        </a>
+                    </div>
+                    
+                    <div class="collapse mt-2" id="orderDetails{{ order.id }}">
+                        <div class="card card-body">
+                            <h6>Состав заказа:</h6>
+                            <ul class="list-unstyled">
+                                {% for item in order.items.all %}
+                                    <li>
+                                        {{ item.book.title }} ({{ item.book.author }}) - 
+                                        {{ item.quantity }} шт. × {{ item.price }} руб.
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            У вас пока нет заказов.
+        </div>
+    {% endif %}
+    
+    <a href="{% url 'book_list' %}" class="btn btn-primary mt-3">
+        Вернуться в каталог
+    </a>
+</div>
+{% endblock %}

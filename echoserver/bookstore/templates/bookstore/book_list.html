@@ -1,0 +1,89 @@
+{% extends 'bookstore/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<h1>Каталог книг</h1>
+
+{% if user.is_authenticated %}
+    <div class="mb-3">
+        <a href="{% url 'book_create' %}" class="btn btn-success">Добавить новую книгу</a>
+    </div>
+{% endif %}
+
+<div class="row">
+    {% for book in page_obj %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">{{ book.title }}</h5>
+                <h6 class="card-subtitle mb-2 text-muted">{{ book.author }}</h6>
+                <p class="card-text">{{ book.description|truncatechars:100 }}</p>
+                <p class="card-text"><strong>Цена:</strong> {{ book.price }} руб.</p>
+                {% if book.published_date %}
+                    <p class="card-text"><small class="text-muted">Дата публикации: {{ book.published_date }}</small></p>
+                {% endif %}
+                <form action="{% url 'add_to_cart' book.id %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">В корзину</button>
+                </form>
+            </div>
+            <div class="card-footer">
+                {% if user.is_admin %}
+                    <a href="{% url 'book_update' book.pk %}" class="btn btn-sm btn-primary">Редактировать</a>
+                    <a href="{% url 'book_delete' book.pk %}" class="btn btn-sm btn-danger">Удалить</a>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info">Книги не найдены.</div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if page_obj.paginator.num_pages > 1 %}
+<nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1" aria-label="First">
+                    <span aria-hidden="true">&laquo;&laquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+                <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+            {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                    <span aria-hidden="true">&raquo;&raquo;</span>
+                </a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<div class="mt-3">
+    <p>Показано {{ page_obj.start_index }}-{{ page_obj.end_index }} из {{ page_obj.paginator.count }} книг</p>
+</div>
+{% endblock %}

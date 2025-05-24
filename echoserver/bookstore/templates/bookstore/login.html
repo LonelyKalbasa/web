@@ -1,0 +1,16 @@
+{% extends 'bookstore/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <h1 class="text-center">{% block form_title %}{% endblock %}</h1>
+        <form method="post">
+            {% csrf_token %}
+            {{ form|crispy }}
+            <button type="submit" class="btn btn-primary w-100">{% block submit_text %}{% endblock %}</button>
+        </form>
+        {% block form_extra %}{% endblock %}
+    </div>
+</div>
+{% endblock %}
