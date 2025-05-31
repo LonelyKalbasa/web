@@ -33,8 +33,7 @@
                             <ul class="list-unstyled">
                                 {% for item in order.items.all %}
                                     <li>
-                                        {{ item.book.title }} ({{ item.book.author }}) - 
-                                        {{ item.quantity }} шт. × {{ item.price }} руб.
+                                        Заказ #{{ order.id }} - {{ order.total_price }} руб. ({{ order.get_status_display }})
                                     </li>
                                 {% endfor %}
                             </ul>

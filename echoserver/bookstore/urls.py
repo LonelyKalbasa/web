@@ -10,7 +10,7 @@ urlpatterns = [
     path('register/', views.register, name='register'),
     path('login/', views.user_login, name='login'),
     path('logout/', views.user_logout, name='logout'),
-
+    path('cart/', views.cart_view, name='cart_view'),
     path('profile/', views.profile, name='profile'),
     path('cart/add/<int:book_id>/', views.add_to_cart, name='add_to_cart'),
     path('cart/', views.cart_detail, name='cart'),
@@ -19,4 +19,6 @@ urlpatterns = [
     path('orders/<int:order_id>/', views.order_detail, name='order_detail'),
     path('cart/update/<int:item_id>/', views.update_cart_item, name='update_cart_item'),
     path('cart/remove/<int:item_id>/', views.remove_from_cart, name='remove_from_cart'),
+    # Альтернативный вариант для POST запросов без ID в URL
+    path('cart/remove/', views.remove_from_cart, name='remove_from_cart_post'),
 ]

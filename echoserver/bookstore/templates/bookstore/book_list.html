@@ -14,19 +14,16 @@
     {% for book in page_obj %}
     <div class="col-md-4 mb-4">
         <div class="card h-100">
-            <div class="card-body">
-                <h5 class="card-title">{{ book.title }}</h5>
-                <h6 class="card-subtitle mb-2 text-muted">{{ book.author }}</h6>
-                <p class="card-text">{{ book.description|truncatechars:100 }}</p>
-                <p class="card-text"><strong>Цена:</strong> {{ book.price }} руб.</p>
-                {% if book.published_date %}
-                    <p class="card-text"><small class="text-muted">Дата публикации: {{ book.published_date }}</small></p>
-                {% endif %}
+            {% with book_id_str=book.id|stringformat:"s" %}
+            <div class="book-item">
+                <h3>{{ book.title }}</h3>
+                <p>Цена: {{ book.price }} руб.</p>
                 <form action="{% url 'add_to_cart' book.id %}" method="post">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-primary">В корзину</button>
                 </form>
             </div>
+            {% endwith %}
             <div class="card-footer">
                 {% if user.is_admin %}
                     <a href="{% url 'book_update' book.pk %}" class="btn btn-sm btn-primary">Редактировать</a>

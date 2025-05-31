@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.http import require_POST, require_http_methods
 from django.views.generic import ListView
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import login, authenticate, logout
@@ -6,6 +7,8 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from .models import Cart, CartItem, Order, Book, OrderItem
 from .forms import BookForm, UserRegistrationForm, UserLoginForm, UserProfileForm
+from decimal import Decimal
+from django.http import JsonResponse
 
 def is_admin(user):
     return user.is_authenticated and user.is_admin()
@@ -107,15 +110,34 @@ def profile(request):
     return render(request, 'bookstore/profile.html', {'form': form})
 
 
-@login_required
+@require_POST
 def add_to_cart(request, book_id):
     book = get_object_or_404(Book, pk=book_id)
-    cart, created = Cart.objects.get_or_create(user=request.user)
-    cart_item, created = CartItem.objects.get_or_create(cart=cart, book=book)
-    if not created:
-        cart_item.quantity += 1
-        cart_item.save()
-    return redirect('book_list')
+    cart = request.session.get('cart', {})
+    book_id_str = str(book_id)
+
+    if book_id_str in cart:
+        cart[book_id_str]['quantity'] += 1
+    else:
+        cart[book_id_str] = {
+            'quantity': 1,
+            'price': str(book.price),
+            'title': book.title
+        }
+
+    request.session['cart'] = cart
+    request.session.modified = True
+    return redirect('cart_view')
+
+    request.session['cart'] = cart
+    request.session.modified = True
+
+    return JsonResponse({
+        'success': True,
+        'book_id': book_id,
+        'quantity': cart[book_id_str]['quantity'],
+        'cart_total': sum(item['quantity'] for item in cart.values())
+    })
 
 
 @login_required
@@ -132,25 +154,79 @@ def cart_detail(request):
     })
 
 
+def cart_view(request):
+    cart = request.session.get('cart', {})
+    cart_items = []
+    total_price = 0
+
+    for book_id, item in cart.items():
+        try:
+            book = Book.objects.get(id=book_id)
+            quantity = item['quantity']
+            price = float(item['price'])
+            subtotal = price * quantity
+
+            cart_items.append({
+                'book': book,
+                'quantity': quantity,
+                'price': price,
+                'subtotal': subtotal
+            })
+            total_price += subtotal
+        except Book.DoesNotExist:
+            continue
+
+    return render(request, 'bookstore/cart.html', {
+        'cart_items': cart_items,
+        'total_price': total_price
+    })
+
+
+@require_http_methods(["POST"])
+@login_required
+def remove_from_cart(request, item_id):
+    # Получаем ID из URL или из POST данных
+    book_id = item_id or request.POST.get('book_id') or request.GET.get('book_id')
+
+    if not book_id:
+        messages.error(request, "Не указан ID товара")
+        return redirect('cart_view')
+
+    cart = request.session.get('cart', {})
+    book_id_str = str(book_id)
+
+    if book_id_str in cart:
+        del cart[book_id_str]
+        request.session['cart'] = cart
+        request.session.modified = True
+        messages.success(request, 'Товар удален из корзины')
+    else:
+        messages.warning(request, 'Товар не найден в корзине')
+
+    return redirect('cart_view')
+
 @login_required
 def checkout(request):
-    cart = get_object_or_404(Cart, user=request.user)
-    total = sum(item.book.price * item.quantity for item in cart.items.all())
+    cart = request.session.get('cart', {})
+    if not cart:
+        return redirect('cart')
 
+    total = sum(Decimal(item['price']) * item['quantity'] for item in cart.values())
     order = Order.objects.create(
         user=request.user,
-        total_price=total
+        total_price=total,
+        status='P'
     )
 
-    for item in cart.items.all():
-        OrderItem.objects.create(
-            order=order,
-            book=item.book,
-            quantity=item.quantity,
-            price=item.book.price
+    for book_id, item in cart.items():
+        book = Book.objects.get(pk=book_id)
+        order.items.create(
+            book=book,
+            quantity=item['quantity'],
+            price=item['price']
         )
 
-    cart.items.all().delete()
+    request.session['cart'] = {}
     return redirect('order_detail', order_id=order.id)
 
 
@@ -185,3 +261,20 @@ def remove_from_cart(request, item_id):
     cart_item.delete()
     messages.success(request, "Товар удален из корзины")
     return redirect('cart')
+
+
+def book_list(request):
+    books = Book.objects.all()
+    cart = request.session.get('cart', {})
+
+    # Добавляем информацию о количестве в корзине для каждой книги
+    for book in books:
+        book.cart_quantity = cart.get(str(book.id), {}).get('quantity', 0)
+
+    return render(request, 'bookstore/book_list.html', {
+        'books': books
+    })
+
+
+# ("adsdasd = %s", [input])
+# ("adsdasd = {input}")
